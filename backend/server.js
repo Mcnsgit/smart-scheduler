@@ -4,8 +4,9 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const connectDB = require("./config/db"); // Import DB connection function
 
+const path = require("path"); 
 // Load env vars - Make sure this path is correct relative to where you run node
-dotenv.config({ path: __dirname + "/.env" });
+dotenv.config({path: path.resolve(__dirname,  ".env" )});
 
 // Connect to Database
 connectDB();
@@ -23,8 +24,7 @@ app.get("/", (req, res) => res.send("API Running")); // Simple test route
 app.use("/api/tasks", require("./routes/api/tasks"));
 app.use('/api/schedule', require('./routes/api/schedule'));
 // Mount other routers later (e.g., settings, schedule)
-// app.use('/api/settings', require('./routes/api/settings'));
+app.use('/api/settings', require('./routes/api/settings'));
 
 const PORT = process.env.PORT || 5001; // Use port from .env or default to 5001
-
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
