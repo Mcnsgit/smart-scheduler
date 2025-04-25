@@ -1,0 +1,244 @@
+/* Global styles with accessibility focus */
+
+/* Skip link for keyboard users */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--mantine-color-indigo-6);
+    color: white;
+    padding: 8px;
+    z-index: 100;
+    transition: top 0.2s;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* High contrast mode support */
+.high-contrast {
+    --contrast-text: #000000;
+    --contrast-background: #ffffff;
+    --contrast-primary: #000099;
+    --contrast-secondary: #660099;
+    --contrast-border: #000000;
+}
+
+.high-contrast body {
+    background-color: var(--contrast-background);
+    color: var(--contrast-text);
+}
+
+.high-contrast a {
+    color: var(--contrast-primary);
+    text-decoration: underline;
+}
+
+.high-contrast button,
+.high-contrast .mantine-Button-root {
+    border: 2px solid var(--contrast-border);
+}
+
+/* Task status classes */
+.task-status-urgent {
+    background-color: var(--status-urgent-bg);
+    color: var(--status-urgent-color);
+}
+
+.task-status-completed {
+    background-color: var(--status-completed-bg);
+    color: var(--status-completed-color);
+}
+
+.task-status-in-progress {
+    background-color: var(--status-in-progress-bg);
+    color: var(--status-in-progress-color);
+}
+
+.task-status-upcoming {
+    background-color: var(--status-upcoming-bg);
+    color: var(--status-upcoming-color);
+}
+
+/* Enhanced focus styles */
+*:focus-visible {
+    outline: var(--focus-ring-width) solid var(--mantine-color-indigo-6) !important;
+    outline-offset: var(--focus-ring-offset) !important;
+}
+
+/* Support for reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Improved touch targets for mobile */
+button,
+.mantine-Button-root,
+.mantine-ActionIcon-root,
+.mantine-Switch-root,
+.mantine-Checkbox-root {
+    min-height: var(--min-touch-target);
+    min-width: var(--min-touch-target);
+}
+
+/* Responsive card layouts */
+@media (max-width: var(--mantine-breakpoint-xs)) {
+    .responsive-card {
+        width: 100%;
+    }
+}
+
+@media (min-width: var(--mantine-breakpoint-xs)) and (max-width: var(--mantine-breakpoint-sm)) {
+    .responsive-card {
+        width: var(--card-size-xs);
+    }
+}
+
+@media (min-width: var(--mantine-breakpoint-sm)) and (max-width: var(--mantine-breakpoint-md)) {
+    .responsive-card {
+        width: var(--card-size-sm);
+    }
+}
+
+@media (min-width: var(--mantine-breakpoint-md)) and (max-width: var(--mantine-breakpoint-lg)) {
+    .responsive-card {
+        width: var(--card-size-md);
+    }
+}
+
+@media (min-width: var(--mantine-breakpoint-lg)) {
+    .responsive-card {
+        width: var(--card-size-lg);
+    }
+}
+
+/* Improve calendar accessibility */
+.fc-daygrid-day-number,
+.fc-col-header-cell-cushion,
+.fc-list-day-text,
+.fc-list-day-side-text {
+    font-size: 1rem;
+    padding: 8px;
+}
+
+.fc-event {
+    cursor: pointer;
+    padding: 4px;
+    border-radius: var(--mantine-radius-sm);
+}
+
+.fc-event-title {
+    font-weight: 500;
+}
+
+/* Screen reader only text */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Task status indicators for screen readers */
+.task-completed::before {
+    content: "(Completed)";
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Striped tables for better readability */
+.striped-table tr:nth-of-type(odd) {
+    background-color: var(--table-stripe-color);
+}
+
+/* Print styles for Calendar and Task list */
+@media print {
+
+    .mantine-AppShell-navbar,
+    .mantine-AppShell-header,
+    button:not(.print-button) {
+        display: none !important;
+    }
+
+    .mantine-AppShell-main {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .fc-toolbar-chunk:last-child {
+        display: none;
+    }
+
+    .fc-view-harness {
+        height: 100% !important;
+    }
+
+    @page {
+        size: landscape;
+        margin: 1cm;
+    }
+}
+
+/* ThemeToggle component styles */
+.theme-toggle {
+    position: relative;
+    overflow: hidden;
+}
+
+.theme-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: opacity 150ms ease;
+}
+
+.theme-icon-light {
+    opacity: 0;
+}
+
+.theme-icon-dark {
+    opacity: 0;
+}
+
+/* Use Mantine's native dark/light mode detection via data attribute */
+html[data-mantine-color-scheme="light"] .theme-icon-light {
+    opacity: 1;
+}
+
+html[data-mantine-color-scheme="dark"] .theme-icon-dark {
+    opacity: 1;
+}
+
+/* Add focus styles for better accessibility */
+.theme-toggle:focus-visible {
+    outline: 2px solid var(--mantine-color-indigo-6);
+    outline-offset: 2px;
+}
+
+/* Optional: Add hover effect */
+.theme-toggle:hover {
+    background-color: var(--mantine-color-gray-0);
+}
+
+html[data-mantine-color-scheme="dark"] .theme-toggle:hover {
+    background-color: var(--mantine-color-dark-6);
+}

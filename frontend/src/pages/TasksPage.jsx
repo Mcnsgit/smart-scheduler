@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -8,7 +8,6 @@ import {
   Paper,
   List,
   ListItem,
-  ListItemText,
   ListItemIcon,
   ListItemSecondaryAction,
   IconButton,
@@ -124,28 +123,13 @@ export default function TasksPage() {
     fetchTasks();
   }, []);
 
-  useEffect(() => {
-    filterTasks();
-  }, [tasks, tabValue]);
-
-  const fetchTasks = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/tasks`);
-      setTasks(response.data);
-    } catch (error) {
-      console.error("Error fetching tasks:", error);
-      setSnackbar({
-        open: true,
-        message: "Failed to load tasks",
-        severity: "error",
-      });
-    } finally {
-      setLoading(false);
+  const filterTasks = useCallback(() => {
+    if (!Array.isArray(tasks)) {
+      console.warn('Tasks is not an array for filtering:', tasks);
+      setFilteredTasks([]);
+      return;
     }
-  };
-
-  const filterTasks = () => {
+    
     switch (tabValue) {
       case 0: // All
         setFilteredTasks(tasks);
@@ -165,6 +149,51 @@ export default function TasksPage() {
         break;
       default:
         setFilteredTasks(tasks);
+    }
+  }, [tasks, tabValue]);
+
+  useEffect(() => {
+    filterTasks();
+  }, [tasks, tabValue, filterTasks]);
+
+
+  const fetchTasks = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API_BASE_URL}/tasks`);
+      console.log("API response", response.data);
+      
+      // Handle both array and object with tasks property formats
+      let tasksData;
+      if (Array.isArray(response.data)) {
+        tasksData = response.data;
+      } else if (response.data && typeof response.data === 'object') {
+        // Try various possible response structures
+        if (Array.isArray(response.data.tasks)) {
+          tasksData = response.data.tasks;
+        } else if (response.data.task && Array.isArray(response.data.task)) {
+          tasksData = response.data.task;
+        } else {
+          console.warn('Unexpected response format:', response.data);
+          tasksData = [];
+        }
+      } else {
+        console.warn('Invalid response data:', response.data);
+        tasksData = [];
+      }
+      
+      setTasks(tasksData);
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      setSnackbar({
+        open: true,
+        message: "Failed to load tasks",
+        severity: "error",
+      });
+      // Set empty array on error
+      setTasks([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -281,7 +310,7 @@ export default function TasksPage() {
   const runScheduler = async () => {
     try {
       setLoading(true);
-      const response = await axios.post(`${API_BASE_URL}/schedule/run`);
+      const response = await axios.post(`${API_BASE_URL}/schedule/run`, {});
       await fetchTasks();
 
       setSnackbar({
@@ -311,6 +340,36 @@ export default function TasksPage() {
     return `${start} - ${end}`;
   };
 
+  // Render task secondary content separately to fix nesting issues
+  const renderTaskSecondary = (task) => (
+    <>
+      {/* Description */}
+      <Typography
+        component="div" // Changed from span to div to avoid nesting issues
+        variant="body2"
+        color="text.primary"
+        sx={{ display: "block", mb: 1 }}
+      >
+        {task.description}
+      </Typography>
+      
+      {/* Schedule time if available */}
+      {task.scheduled_start_time && (
+        <Typography
+          component="div" // Changed from span to div
+          variant="body2"
+          color="text.secondary"
+          sx={{ mb: 1 }}
+        >
+          {formatScheduleTime(
+            task.scheduled_start_time,
+            task.scheduled_end_time
+          )}
+        </Typography>
+      )}
+    </>
+  );
+
   return (
     <Box>
       <Box
@@ -322,7 +381,7 @@ export default function TasksPage() {
         <Typography variant="h4" component="h1">
           Tasks
         </Typography>
-        {filteredTasks.some(
+        {Array.isArray(filteredTasks) && filteredTasks.some(
           (task) => !task.completed && !task.scheduled_start_time
         ) && (
           <Button
@@ -360,7 +419,7 @@ export default function TasksPage() {
         <Box display="flex" justifyContent="center" my={4}>
           <CircularProgress />
         </Box>
-      ) : filteredTasks.length === 0 ? (
+      ) : !Array.isArray(filteredTasks) || filteredTasks.length === 0 ? (
         <Paper sx={{ p: 3, textAlign: "center" }}>
           <Typography variant="body1" color="text.secondary">
             No tasks found in this category
@@ -382,63 +441,48 @@ export default function TasksPage() {
                   <ListItemIcon>
                     <DragIcon color="disabled" />
                   </ListItemIcon>
-                  <ListItemText
-                    primary={task.title || task.description.substring(0, 40)}
-                    secondary={
-                      <>
-                        <Typography
-                          component="span"
-                          variant="body2"
-                          color="text.primary"
-                          sx={{ display: "block" }}
-                        >
-                          {task.description}
-                        </Typography>
-                        {task.scheduled_start_time && (
-                          <Typography
-                            component="span"
-                            variant="body2"
-                            color="text.secondary"
-                          >
-                            {formatScheduleTime(
-                              task.scheduled_start_time,
-                              task.scheduled_end_time
-                            )}
-                          </Typography>
-                        )}
-                        <Box mt={1}>
-                          {task.nlp_data?.category && (
-                            <Chip
-                              label={task.nlp_data.category}
-                              size="small"
-                              color="primary"
-                              variant="outlined"
-                              sx={{ mr: 1, mb: 1 }}
-                            />
-                          )}
-                          {task.nlp_data?.keywords
-                            ?.slice(0, 3)
-                            .map((keyword, i) => (
-                              <Chip
-                                key={i}
-                                label={keyword}
-                                size="small"
-                                sx={{ mr: 1, mb: 1 }}
-                              />
-                            ))}
-                          {task.estimated_duration && (
-                            <Chip
-                              label={`${task.estimated_duration} min`}
-                              size="small"
-                              color="secondary"
-                              variant="outlined"
-                              sx={{ mr: 1, mb: 1 }}
-                            />
-                          )}
-                        </Box>
-                      </>
-                    }
-                  />
+                  
+                  {/* Use custom rendering for task content to avoid nesting issues */}
+                  <Box sx={{ flex: 1, pr: 2 }}>
+                    <Typography variant="body1" component="div">
+                      {task.title || task.description.substring(0, 40)}
+                    </Typography>
+                    
+                    {renderTaskSecondary(task)}
+                    
+                    {/* Tags/chips in a separate box outside of Typography */}
+                    <Box mt={1}>
+                      {task.nlp_data?.category && (
+                        <Chip
+                          label={task.nlp_data.category}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                          sx={{ mr: 1, mb: 1 }}
+                        />
+                      )}
+                      {task.nlp_data?.keywords
+                        ?.slice(0, 3)
+                        .map((keyword, i) => (
+                          <Chip
+                            key={i}
+                            label={keyword}
+                            size="small"
+                            sx={{ mr: 1, mb: 1 }}
+                          />
+                        ))}
+                      {task.estimated_duration && (
+                        <Chip
+                          label={`${task.estimated_duration} min`}
+                          size="small"
+                          color="secondary"
+                          variant="outlined"
+                          sx={{ mr: 1, mb: 1 }}
+                        />
+                      )}
+                    </Box>
+                  </Box>
+                  
                   <ListItemSecondaryAction>
                     <IconButton
                       edge="end"
@@ -574,5 +618,4 @@ export default function TasksPage() {
         </Alert>
       </Snackbar>
     </Box>
-  );
-}
+  )}

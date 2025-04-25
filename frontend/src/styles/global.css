@@ -1,0 +1,159 @@
+/* 
+ * Global styles for the Smart Scheduler application
+ * Includes additional global styles that extend Mantine's reset
+ */
+
+/* Set base font size for rem calculations */
+:root {
+    font-size: 16px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--mantine-color-gray-5) transparent;
+}
+
+/* Basic reset extensions */
+html {
+    height: 100%;
+    box-sizing: border-box;
+}
+
+body {
+    height: 100%;
+    min-height: 100vh;
+    text-rendering: optimizeSpeed;
+}
+
+#root {
+    height: 100%;
+}
+
+/* Improved scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: var(--mantine-color-gray-5);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: var(--mantine-color-gray-6);
+}
+
+/* Improved focus handling for keyboard users */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid var(--mantine-color-indigo-6);
+    outline-offset: 2px;
+}
+
+/* Custom selection styling */
+::selection {
+    background-color: var(--mantine-color-indigo-2);
+    color: var(--mantine-color-indigo-8);
+}
+
+/* Accessibility-first typography enhancements */
+body {
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure content is never hidden for screen readers but visually hidden */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Ensure clickable elements have proper hover states */
+button:not(:disabled),
+a[role="button"],
+.clickable {
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+/* Print styles */
+@media print {
+
+    /* Ensure text is black on white for best print contrast */
+    body {
+        color: black;
+        background: white;
+    }
+
+    /* Avoid unnecessary page breaks */
+    p,
+    h2,
+    h3,
+    h4,
+    h5 {
+        orphans: 3;
+        widows: 3;
+    }
+
+    /* Avoid page breaks after headers */
+    h1,
+    h2,
+    h3,
+    h4,
+    h5 {
+        page-break-after: avoid;
+    }
+
+    /* Show link URLs in parentheses for printed pages */
+    a[href]:after {
+        content: " (" attr(href) ")";
+        font-size: 90%;
+    }
+
+    /* Don't show URLs for internal links */
+    a[href^="#"]:after {
+        content: "";
+    }
+}
+
+/* Support for high contrast mode */
+@media (prefers-contrast: more) {
+    :root {
+        --mantine-color-text: black;
+        --mantine-color-body: white;
+    }
+
+    a {
+        text-decoration: underline;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+        border: 1px solid black !important;
+    }
+}
+
+/* Support for animations respecting user preferences */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

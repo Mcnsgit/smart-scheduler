@@ -17,16 +17,13 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import axios from "axios";
 import { format, parseISO, addMinutes } from "date-fns";
-
-// API base URL from environment variable
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+import taskStateService from "../services/taskStateService";
+import scheduleService from "../services/scheduleService";
 
 export default function CalendarPage() {
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0); // Used to force re-render
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [eventDialog, setEventDialog] = useState({ open: false, event: null });
   const [snackbar, setSnackbar] = useState({
@@ -36,45 +33,61 @@ export default function CalendarPage() {
   });
   const calendarRef = useRef(null);
 
-  useEffect(() => {
-    fetchTasks();
-  }, []);
+  // Get state from task service
+  const taskState = taskStateService.getState();
 
-  const fetchTasks = async () => {
-    try {
+  // Fetch tasks on component mount and set up refresh interval
+  useEffect(() => {
+    const fetchData = async () => {
       setLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/tasks`);
-      setTasks(response.data);
-    } catch (error) {
-      console.error("Error fetching tasks:", error);
-      setSnackbar({
-        open: true,
-        message: "Failed to load tasks",
-        severity: "error",
-      });
-    } finally {
+      await taskStateService.fetchTasks(true); // Force refresh on mount
       setLoading(false);
-    }
-  };
+    };
+
+    fetchData();
+
+    // Set up an interval to refresh tasks
+    const interval = setInterval(() => {
+      taskStateService.fetchTasks();
+      setRefreshKey((prev) => prev + 1); // Force re-render to update view with new state
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   const runScheduler = async () => {
     try {
       setLoading(true);
-      const response = await axios.post(`${API_BASE_URL}/schedule/run`);
-      await fetchTasks();
 
-      setSnackbar({
-        open: true,
-        message: `${
-          response.data.scheduledTasks?.length || 0
-        } tasks scheduled successfully`,
-        severity: "success",
-      });
+      // Use the enhanced scheduler service
+      const result = await scheduleService.runScheduler();
+
+      // Refresh tasks regardless of result
+      await taskStateService.fetchTasks(true);
+
+      if (result.success) {
+        // Successfully scheduled tasks
+        setSnackbar({
+          open: true,
+          message: `${
+            result.scheduledTasks?.length || 0
+          } tasks scheduled successfully`,
+          severity: "success",
+        });
+      } else {
+        // Handle scheduler failure
+        console.error("Scheduler error:", result.error);
+        setSnackbar({
+          open: true,
+          message: result.message || "Failed to schedule tasks",
+          severity: "error",
+        });
+      }
     } catch (error) {
       console.error("Error running scheduler:", error);
       setSnackbar({
         open: true,
-        message: "Failed to schedule tasks",
+        message: "Failed to connect to scheduling service",
         severity: "error",
       });
     } finally {
@@ -84,9 +97,16 @@ export default function CalendarPage() {
 
   // Format event data for FullCalendar
   const getCalendarEvents = () => {
-    return tasks
+    // Ensure tasks is an array before filtering
+    if (!Array.isArray(taskState.tasks)) {
+      console.warn("Tasks is not an array:", taskState.tasks);
+      return [];
+    }
+
+    return taskState.tasks
       .filter(
         (task) =>
+          task &&
           !task.completed &&
           task.scheduled_start_time &&
           task.scheduled_end_time
@@ -116,6 +136,10 @@ export default function CalendarPage() {
       "Meeting/Appointment": "#9C27B0", // Purple
       Chore: "#607D8B", // Blue Grey
       Exercise: "#FF9800", // Orange
+      "Exercise/Health": "#FF9800", // Orange (matching Exercise)
+      "Family/Personal": "#E91E63", // Pink
+      Finance: "#00BCD4", // Cyan
+      "Entertainment/Social": "#673AB7", // Deep Purple
       General: "#795548", // Brown
     };
 
@@ -142,14 +166,11 @@ export default function CalendarPage() {
       const durationMinutes = task.estimated_duration || 30;
       const newEndTime = addMinutes(newStartTime, durationMinutes);
 
-      // Update task in the database
-      await axios.put(`${API_BASE_URL}/tasks/${task._id}`, {
+      // Update task using task service
+      await taskStateService.updateTask(task._id, {
         scheduled_start_time: newStartTime,
         scheduled_end_time: newEndTime,
       });
-
-      // Refresh tasks
-      await fetchTasks();
 
       setSnackbar({
         open: true,
@@ -174,12 +195,9 @@ export default function CalendarPage() {
       if (!selectedEvent) return;
 
       const task = selectedEvent.extendedProps.task;
-      await axios.put(`${API_BASE_URL}/tasks/${task._id}`, {
+      await taskStateService.updateTask(task._id, {
         completed: true,
       });
-
-      // Refresh tasks
-      await fetchTasks();
 
       setEventDialog({ open: false, event: null });
       setSelectedEvent(null);
@@ -205,6 +223,11 @@ export default function CalendarPage() {
     return format(parseISO(dateStr), "MMM d, h:mm a");
   };
 
+  // This ensures our component re-renders when taskState changes
+  useEffect(() => {
+    // This is just to force a re-render when tasks change
+  }, [taskState.tasks, refreshKey]);
+
   return (
     <Box>
       <Box
@@ -216,9 +239,7 @@ export default function CalendarPage() {
         <Typography variant="h4" component="h1">
           Calendar
         </Typography>
-        {tasks.some(
-          (task) => !task.completed && !task.scheduled_start_time
-        ) && (
+        {taskState.stats.unscheduledTasks > 0 && (
           <Button
             variant="contained"
             color="primary"
@@ -235,7 +256,7 @@ export default function CalendarPage() {
       </Box>
 
       <Paper sx={{ p: 2, height: "calc(100vh - 200px)", minHeight: "500px" }}>
-        {loading && tasks.length === 0 ? (
+        {loading && taskState.tasks.length === 0 ? (
           <Box
             display="flex"
             justifyContent="center"

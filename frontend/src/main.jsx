@@ -1,55 +1,30 @@
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import { ThemeProvider, createTheme } from "@mui/material/styles";
-import { CssBaseline } from "@mui/material";
-import { LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import ErrorBoundary from "./ErrorBoundary.jsx";
-import "./index.css";
+import React from "react";
+import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
+import { AppThemeProvider } from "./theme/ThemeProvider.jsx";
+import { ColorSchemeScript } from "@mantine/core";
 
-// Create a theme
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: "#1976d2",
-    },
-    secondary: {
-      main: "#f50057",
-    },
-  },
-  typography: {
-    fontFamily: [
-      "-apple-system",
-      "BlinkMacSystemFont",
-      '"Segoe UI"',
-      "Roboto",
-      '"Helvetica Neue"',
-      "Arial",
-      "sans-serif",
-    ].join(","),
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          textTransform: "none",
-        },
-      },
-    },
-  },
-});
+// Import Mantine styles
+import "@mantine/core/styles.css";
+import "@mantine/notifications/styles.css";
+import "@mantine/dates/styles.css";
+import "@mantine/spotlight/styles.css";
 
-createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <ErrorBoundary>
+// Import custom styles
+import "./styles/global.css";
+import "./styles/styles.css";
 
-    <ThemeProvider theme={theme}>
-      <LocalizationProvider dateAdapter={AdapterDateFns}>
-        <CssBaseline />
-        <App />
-      </LocalizationProvider>
-    </ThemeProvider>
-    </ErrorBoundary>
-  </StrictMode>
+// Configure accessibility metadata
+document.documentElement.lang = "en";
+document.documentElement.setAttribute("dir", "ltr");
+
+// Render the app
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    {/* ColorSchemeScript must be rendered before AppThemeProvider */}
+    <ColorSchemeScript defaultColorScheme="light" />
+    <AppThemeProvider>
+      <App />
+    </AppThemeProvider>
+  </React.StrictMode>
 );

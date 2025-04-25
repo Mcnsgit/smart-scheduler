@@ -1,68 +1,149 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+/* Accessibility-first custom styles */
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* Skip link for keyboard users */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #3A36E0;
+  color: white;
+  padding: 8px;
+  z-index: 100;
+  transition: top 0.2s;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+.skip-link:focus {
+  top: 0;
 }
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+/* High contrast mode */
+.high-contrast {
+  --contrast-text: #000000;
+  --contrast-background: #ffffff;
+  --contrast-primary: #000099;
+  --contrast-secondary: #660099;
+  --contrast-border: #000000;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+.high-contrast body {
+  background-color: var(--contrast-background);
+  color: var(--contrast-text);
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
+.high-contrast a {
+  color: var(--contrast-primary);
+  text-decoration: underline;
+}
+
+.high-contrast button,
+.high-contrast .mantine-Button-root {
+  border: 2px solid var(--contrast-border);
+}
+
+/* Ensure focus styles are very visible */
+*:focus-visible {
+  outline: 3px solid #4A46EC !important;
+  outline-offset: 2px !important;
+}
+
+/* Support for reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Large text for readability */
+html {
+  font-size: 16px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 18px;
+  }
+}
+
+/* Improve form field accessibility */
+input,
+textarea,
+select {
+  font-size: 1rem;
+}
+
+/* Add extra padding to clickable elements for touch targets */
+button,
+.mantine-Button-root,
+.mantine-ActionIcon-root,
+.mantine-Switch-root,
+.mantine-Checkbox-root {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Improve calendar accessibility */
+.fc-daygrid-day-number,
+.fc-col-header-cell-cushion,
+.fc-list-day-text,
+.fc-list-day-side-text {
+  font-size: 1rem;
+  padding: 8px;
+}
+
+.fc-event {
   cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  padding: 4px;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
+.fc-event-title {
+  font-weight: 500;
+}
+
+/* Help screen reader users with task status */
+.task-completed {
+  position: relative;
+}
+
+.task-completed::before {
+  content: "(Completed)";
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Print styles for Calendar and Task list */
+@media print {
+
+  .mantine-AppShell-navbar,
+  .mantine-AppShell-header,
   button {
-    background-color: #f9f9f9;
+    display: none !important;
+  }
+
+  .mantine-AppShell-main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .fc-toolbar-chunk:last-child {
+    display: none;
+  }
+
+  .fc-view-harness {
+    height: 100% !important;
+  }
+
+  @page {
+    size: landscape;
+    margin: 1cm;
   }
 }
