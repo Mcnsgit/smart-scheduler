@@ -41,8 +41,15 @@ const apiLimiter = rateLimit({
 // Apply rate limiting to all requests
 app.use(apiLimiter);
 
-// Init Middleware
-app.use(cors()); // Enable CORS for all origins (adjust for production)
+// CORS Setup
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+app.use(cors(corsOptions));
+
 // Body Parser
 app.use(express.json({ limit: '1mb' })); // Limit request size
 

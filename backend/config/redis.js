@@ -1,44 +1,99 @@
+
+// // backend/config/redis.js
 // backend/config/redis.js
-const redis = require("redis");
-const { promisify } = require("util");
+const redis = require('redis');
+const { promisify } = require('util');
 
-// Create Redis client
-const redisClient = redis.createClient({
-  host: process.env.REDIS_HOST || "localhost",
-  port: process.env.REDIS_PORT || 6379,
-  password: process.env.REDIS_PASSWORD || "",
-  // Enable TLS if using a secure connection
-  ...(process.env.REDIS_TLS_URL ? { tls: { rejectUnauthorized: false } } : {}),
-  retry_strategy: function (options) {
-    if (options.error && options.error.code === "ECONNREFUSED") {
-      // End reconnecting on a specific error
-      console.error("Redis server refused connection");
-      return new Error("The server refused the connection");
+// Create a mock implementation if Redis is not available
+const createMockRedis = () => {
+  console.warn('Using mock Redis implementation');
+  const cache = new Map();
+  return {
+    getAsync: async (key) => cache.get(key) || null,
+    setAsync: async (key, value, ...args) => {
+      cache.set(key, value);
+      return 'OK';
+    },
+    delAsync: async (key) => {
+      cache.delete(key);
+      return 1;
     }
-    if (options.total_retry_time > 1000 * 60 * 60) {
-      // End reconnecting after 1 hour
-      return new Error("Retry time exhausted");
-    }
-    if (options.attempt > 10) {
-      // End reconnecting with built in error
-      return undefined;
-    }
-    // Reconnect after increasing time intervals
-    return Math.min(options.attempt * 100, 3000);
-  },
-});
+  };
+};
 
-// Handle Redis client errors to prevent app crash
-redisClient.on("error", (err) => {
-  console.error("Redis error:", err);
-});
+// Try to create Redis client, fall back to mock if it fails
+let redisClient;
+let getAsync, setAsync, delAsync;
 
-// Promisify Redis methods for async/await usage
-const getAsync = promisify(redisClient.get).bind(redisClient);
-const setAsync = promisify(redisClient.set).bind(redisClient);
-const delAsync = promisify(redisClient.del).bind(redisClient);
-const keysAsync = promisify(redisClient.keys).bind(redisClient);
-const expireAsync = promisify(redisClient.expire).bind(redisClient);
+try {
+  redisClient = redis.createClient({
+    host: process.env.REDIS_HOST || 'localhost',
+    port: process.env.REDIS_PORT || 6379,
+    password: process.env.REDIS_PASSWORD || '',
+  });
+
+  // Promisify methods
+  getAsync = promisify(redisClient.get).bind(redisClient);
+  setAsync = promisify(redisClient.set).bind(redisClient);
+  delAsync = promisify(redisClient.del).bind(redisClient);
+  
+  // Handle connection issues
+  redisClient.on('error', (err) => {
+    console.warn('Redis connection error:', err);
+    const mockImplementation = createMockRedis();
+    getAsync = mockImplementation.getAsync;
+    setAsync = mockImplementation.setAsync;
+    delAsync = mockImplementation.delAsync;
+  });
+} catch (error) {
+  console.warn('Failed to initialize Redis, using memory cache fallback:', error.message);
+  const mockImplementation = createMockRedis();
+  getAsync = mockImplementation.getAsync;
+  setAsync = mockImplementation.setAsync;
+  delAsync = mockImplementation.delAsync;
+}
+
+
+// const redis = require("redis");
+// const { promisify } = require("util");
+
+// // Create Redis client
+// const redisClient = redis.createClient({
+//   host: process.env.REDIS_HOST || "localhost",
+//   port: process.env.REDIS_PORT || 6379,
+//   password: process.env.REDIS_PASSWORD || "",
+//   // Enable TLS if using a secure connection
+//   ...(process.env.REDIS_TLS_URL ? { tls: { rejectUnauthorized: false } } : {}),
+//   retry_strategy: function (options) {
+//     if (options.error && options.error.code === "ECONNREFUSED") {
+//       // End reconnecting on a specific error
+//       console.error("Redis server refused connection");
+//       return new Error("The server refused the connection");
+//     }
+//     if (options.total_retry_time > 1000 * 60 * 60) {
+//       // End reconnecting after 1 hour
+//       return new Error("Retry time exhausted");
+//     }
+//     if (options.attempt > 10) {
+//       // End reconnecting with built in error
+//       return undefined;
+//     }
+//     // Reconnect after increasing time intervals
+//     return Math.min(options.attempt * 100, 3000);
+//   },
+// });
+
+// // Handle Redis client errors to prevent app crash
+// redisClient.on("error", (err) => {
+//   console.error("Redis error:", err);
+// });
+
+// // Promisify Redis methods for async/await usage
+// const getAsync = promisify(redisClient.get).bind(redisClient);
+// const setAsync = promisify(redisClient.set).bind(redisClient);
+// const delAsync = promisify(redisClient.del).bind(redisClient);
+// const keysAsync = promisify(redisClient.keys).bind(redisClient);
+// const expireAsync = promisify(redisClient.expire).bind(redisClient);
 
 // Default cache expiration time (in seconds)
 const DEFAULT_EXPIRATION = 3600; // 1 hour
@@ -107,7 +162,7 @@ const clearCache = async (pattern) => {
 };
 
 module.exports = {
-  redisClient,
+ redisClient,
   getAsync,
   setAsync,
   delAsync,

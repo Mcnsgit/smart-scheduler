@@ -5,7 +5,7 @@ import {
 } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import { ModalsProvider } from "@mantine/modals";
-import { Spotlight, SpotlightActionData } from "@mantine/spotlight/styles.css";
+import { Spotlight } from "@mantine/spotlight";
 import { theme, cssVariablesResolver } from "./theme";
 import { IconHome, IconCalendarMonth, IconSquareRoundedPlus,IconSettings, IconSearch, IconListDetails } from '@tabler/icons-react';
 

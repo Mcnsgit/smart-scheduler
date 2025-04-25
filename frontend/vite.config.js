@@ -5,18 +5,27 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// https://vitejs.dev/config/
+// vite.config.js
 export default defineConfig({
   plugins: [react()],
-resolve: {
-    "@": resolve(__dirname, "src"),
+  resolve: {
+    alias: {
+      "@": resolve(__dirname, "src"),
+    },
   },
-server: {
+  server: {
     port: 3000,
+    hmr: {
+      // More reliable HMR configuration
+      host: 'localhost',
+      protocol: 'ws',
+      timeout: 30000,
+    },
     proxy: {
       "/api": {
         target: "http://localhost:5001",
         changeOrigin: true,
+        secure: false,
       },
     },
   },

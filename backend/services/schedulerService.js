@@ -19,8 +19,6 @@ const {
 const pLimit = require("p-limit");
 const cacheService = require("./cacheService");
 
-// Concurrency limiter for parallel processing
-const limit = pLimit; // Limit to 4 concurrent operations
 /**
  * Helper to parse HH:mm time string into minutes from midnight
  */
